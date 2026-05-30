@@ -35,4 +35,10 @@ public class AuthController {
         return ResponseEntity.ok(
                 authService.login(request));
     }
+    
+    @GetMapping("/profile")
+    public String profile() {
+
+        return "Welcome Authenticated User";
+    }
 }
