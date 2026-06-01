@@ -1,8 +1,9 @@
 package com.ecommerce.productservice.dto;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
-public class ProductResponse {
+public class ProductResponse implements Serializable {
 
     private Long id;
     private String productName;

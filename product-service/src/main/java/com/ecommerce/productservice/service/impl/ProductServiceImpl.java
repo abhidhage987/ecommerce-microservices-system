@@ -1,5 +1,7 @@
 package com.ecommerce.productservice.service.impl;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import com.ecommerce.productservice.dto.ProductRequest;
@@ -13,123 +15,85 @@ import java.util.stream.Collectors;
 import com.ecommerce.productservice.exception.ProductNotFoundException;
 
 @Service
-public class ProductServiceImpl
-        implements ProductService {
+public class ProductServiceImpl implements ProductService {
 
-    private final ProductRepository productRepository;
+	private final ProductRepository productRepository;
 
-    public ProductServiceImpl(
-            ProductRepository productRepository) {
+	public ProductServiceImpl(ProductRepository productRepository) {
 
-        this.productRepository = productRepository;
-    }
+		this.productRepository = productRepository;
+	}
 
-    @Override
-    public ProductResponse addProduct(
-            ProductRequest request) {
+	@Override
+	public ProductResponse addProduct(ProductRequest request) {
 
-        Product product = new Product();
+		Product product = new Product();
 
-        product.setProductName(
-                request.getProductName());
+		product.setProductName(request.getProductName());
 
-        product.setDescription(
-                request.getDescription());
+		product.setDescription(request.getDescription());
 
-        product.setPrice(
-                request.getPrice());
+		product.setPrice(request.getPrice());
 
-        product.setStockQuantity(
-                request.getStockQuantity());
+		product.setStockQuantity(request.getStockQuantity());
 
-        Product savedProduct =
-                productRepository.save(product);
+		Product savedProduct = productRepository.save(product);
 
-        return new ProductResponse(
-                savedProduct.getId(),
-                savedProduct.getProductName(),
-                savedProduct.getDescription(),
-                savedProduct.getPrice(),
-                savedProduct.getStockQuantity());
-    }
-    
-    @Override
-    public List<ProductResponse> getAllProducts() {
+		return new ProductResponse(savedProduct.getId(), savedProduct.getProductName(), savedProduct.getDescription(),
+				savedProduct.getPrice(), savedProduct.getStockQuantity());
+	}
 
-        return productRepository.findAll()
-                .stream()
-                .map(product -> new ProductResponse(
-                        product.getId(),
-                        product.getProductName(),
-                        product.getDescription(),
-                        product.getPrice(),
-                        product.getStockQuantity()))
-                .collect(Collectors.toList());
-    }
-    
-    @Override
-    public ProductResponse getProductById(Long id) {
+	@Override
+	public List<ProductResponse> getAllProducts() {
 
-        Product product =
-                productRepository.findById(id)
-                        .orElseThrow(() ->
-                                new ProductNotFoundException(
-                                        "Product Not Found"));
+		return productRepository
+				.findAll().stream().map(product -> new ProductResponse(product.getId(), product.getProductName(),
+						product.getDescription(), product.getPrice(), product.getStockQuantity()))
+				.collect(Collectors.toList());
+	}
 
-        return new ProductResponse(
-                product.getId(),
-                product.getProductName(),
-                product.getDescription(),
-                product.getPrice(),
-                product.getStockQuantity());
-    }
-    
-    @Override
-    public ProductResponse updateProduct(
-            Long id,
-            ProductRequest request) {
+	@Cacheable(value = "products", key = "#id")
+	@Override
+	public ProductResponse getProductById(Long id) {
 
-        Product product =
-                productRepository.findById(id)
-                        .orElseThrow(() ->
-                                new ProductNotFoundException(
-                                        "Product Not Found"));
+		Product product = productRepository.findById(id)
+				.orElseThrow(() -> new ProductNotFoundException("Product Not Found"));
 
-        product.setProductName(
-                request.getProductName());
+		return new ProductResponse(product.getId(), product.getProductName(), product.getDescription(),
+				product.getPrice(), product.getStockQuantity());
+	}
 
-        product.setDescription(
-                request.getDescription());
+	@CacheEvict(value = "products", key = "#id")
+	@Override
+	public ProductResponse updateProduct(Long id, ProductRequest request) {
 
-        product.setPrice(
-                request.getPrice());
+		Product product = productRepository.findById(id)
+				.orElseThrow(() -> new ProductNotFoundException("Product Not Found"));
 
-        product.setStockQuantity(
-                request.getStockQuantity());
+		product.setProductName(request.getProductName());
 
-        Product updatedProduct =
-                productRepository.save(product);
+		product.setDescription(request.getDescription());
 
-        return new ProductResponse(
-                updatedProduct.getId(),
-                updatedProduct.getProductName(),
-                updatedProduct.getDescription(),
-                updatedProduct.getPrice(),
-                updatedProduct.getStockQuantity());
-    }
-    
-    @Override
-    public String deleteProduct(Long id) {
+		product.setPrice(request.getPrice());
 
-        Product product =
-                productRepository.findById(id)
-                        .orElseThrow(() ->
-                                new ProductNotFoundException(
-                                        "Product Not Found"));
+		product.setStockQuantity(request.getStockQuantity());
 
-        productRepository.delete(product);
+		Product updatedProduct = productRepository.save(product);
 
-        return "Product Deleted Successfully";
-    }
-    
+		return new ProductResponse(updatedProduct.getId(), updatedProduct.getProductName(),
+				updatedProduct.getDescription(), updatedProduct.getPrice(), updatedProduct.getStockQuantity());
+	}
+
+	@CacheEvict(value = "products", key = "#id")
+	@Override
+	public String deleteProduct(Long id) {
+
+		Product product = productRepository.findById(id)
+				.orElseThrow(() -> new ProductNotFoundException("Product Not Found"));
+
+		productRepository.delete(product);
+
+		return "Product Deleted Successfully";
+	}
+
 }
